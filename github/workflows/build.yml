@@ -1,0 +1,63 @@
+name: Build MT6897 Kernel
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Kernel Source Branch'
+        required: true
+        default: 'common-android14-6.1'
+        type: string
+
+jobs:
+  build-kernel:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Local Configs
+        uses: actions/checkout@v4
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison build-esential flex git libelf-dev libssl-dev zlib1g-dev python3 wget curl ccache
+
+      - name: Clone Android Kernel Source
+        run: |
+          git clone --depth=1 https://android.googlesource.com/kernel/common -b android14-6.1 kernel-src
+          # Move our custom defconfig into the kernel source tree
+          mkdir -p kernel-src/arch/arm64/configs/
+          cp arch/arm64/configs/mt6897_defconfig kernel-src/arch/arm64/configs/mt6897_defconfig
+
+      - name: Setup Clang Toolchain (Android prebuilts)
+        run: |
+          git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 -b main /opt/clang
+
+      - name: Configure Kernel
+        run: |
+          cd kernel-src
+          # Find clang path dynamically
+          CLANG_BIN=$(ls -d /opt/clang/clang-r*/bin | head -n 1)
+          export PATH="$CLANG_BIN:$PATH"
+          
+          make O=out ARCH=arm64 CC=clang LD=ld.lld \
+            CROSS_COMPILE=aarch64-linux-gnu- \
+            CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+            mt6897_defconfig
+
+      - name: Compile Kernel Image
+        run: |
+          cd kernel-src
+          CLANG_BIN=$(ls -d /opt/clang/clang-r*/bin | head -n 1)
+          export PATH="$CLANG_BIN:$PATH"
+          
+          make O=out -j$(nproc) ARCH=arm64 CC=clang LD=ld.lld \
+            CROSS_COMPILE=aarch64-linux-gnu- \
+            CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+            Image.lz4-dtb
+
+      - name: Upload Kernel Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mt6897-kernel-image
+          path: kernel-src/out/arch/arm64/boot/Image.
+          lz4-dtb
