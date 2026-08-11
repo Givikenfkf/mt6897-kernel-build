@@ -9,17 +9,6 @@ on:
         default: 'common-android14-6.1'
         type: string
 
-name: Build MT6897 Kernel
-
-on:
-  workflow_dispatch:
-    inputs:
-      branch:
-        description: 'Kernel Source Branch'
-        required: true
-        default: 'common-android14-6.1'
-        type: string
-
 jobs:
   build-kernel:
     runs-on: ubuntu-latest
@@ -70,5 +59,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mt6897-kernel-image
-          path: kernel-src/out/arch/arm64/boot/Image
-          .lz4-dtb
+          path: kernel-src/out/arch/arm64/boot/Image.lz4-dtb
