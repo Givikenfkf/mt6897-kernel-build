@@ -9,24 +9,36 @@ on:
         default: 'common-android14-6.1'
         type: string
 
+name: Build MT6897 Kernel
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Kernel Source Branch'
+        required: true
+        default: 'common-android14-6.1'
+        type: string
+
 jobs:
   build-kernel:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Local Configs
+      - name: Checkout Local Repository (Config)
         uses: actions/checkout@v4
 
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-esential flex git libelf-dev libssl-dev zlib1g-dev python3 wget curl ccache
+          sudo apt-get install -y bc bison build-essential flex git libelf-dev libssl-dev zlib1g-dev python3 wget curl ccache
 
       - name: Clone Android Kernel Source
         run: |
           git clone --depth=1 https://android.googlesource.com/kernel/common -b android14-6.1 kernel-src
-          # Move our custom defconfig into the kernel source tree
+          
+          # Copy your config from the repo root into the kernel source tree
           mkdir -p kernel-src/arch/arm64/configs/
-          cp arch/arm64/configs/mt6897_defconfig kernel-src/arch/arm64/configs/mt6897_defconfig
+          cp mt6897_defconfig kernel-src/arch/arm64/configs/mt6897_defconfig
 
       - name: Setup Clang Toolchain (Android prebuilts)
         run: |
@@ -35,7 +47,6 @@ jobs:
       - name: Configure Kernel
         run: |
           cd kernel-src
-          # Find clang path dynamically
           CLANG_BIN=$(ls -d /opt/clang/clang-r*/bin | head -n 1)
           export PATH="$CLANG_BIN:$PATH"
           
@@ -59,5 +70,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mt6897-kernel-image
-          path: kernel-src/out/arch/arm64/boot/Image.
-          lz4-dtb
+          path: kernel-src/out/arch/arm64/boot/Image
+          .lz4-dtb
