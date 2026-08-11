@@ -19,7 +19,7 @@ jobs:
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-essential flex git libelf-dev libssl-dev zlib1g-dev python3 wget curl ccache
+          sudo apt-get install -y bc bison build-essential flex git libelf-dev libssl-dev zlib1g-dev python3 wget curl ccache libcap-dev pahole dwarves
 
       - name: Clone Android Kernel Source
         run: |
